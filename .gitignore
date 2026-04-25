@@ -1,0 +1,8 @@
+result
+result-*
+.direnv/
+
+/secrets/age-key.txt
+/secrets/keys.txt
+
+/.env
