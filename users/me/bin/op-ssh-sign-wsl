@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+shopt -s nullglob
+
+target=""
+winhome="${HOME}/winhome"
+
+candidates=(/mnt/c/Program\ Files/1Password/app/*/op-ssh-sign-wsl)
+if [ "${#candidates[@]}" -gt 0 ]; then
+  target=$(printf '%s\n' "${candidates[@]}" | sort -V | tail -1)
+fi
+
+if [ ! -d "$winhome" ] && [ -x /mnt/c/Windows/System32/cmd.exe ] && command -v /sbin/wslpath >/dev/null 2>&1; then
+  win_userprofile=$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r') || true
+  resolved=$(/sbin/wslpath -u "$win_userprofile" 2>/dev/null) || true
+  if [ -n "${resolved:-}" ] && [ -d "$resolved" ]; then
+    winhome="$resolved"
+  fi
+fi
+
+if [ -z "$target" ] && [ -f "${winhome}/AppData/Local/Microsoft/WindowsApps/op-ssh-sign-wsl.exe" ]; then
+  target="${winhome}/AppData/Local/Microsoft/WindowsApps/op-ssh-sign-wsl.exe"
+fi
+
+if [ -z "$target" ]; then
+  echo "op-ssh-sign-wsl: could not find a 1Password signer" >&2
+  exit 1
+fi
+
+exec "$target" "$@"
