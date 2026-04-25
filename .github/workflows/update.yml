@@ -1,0 +1,82 @@
+name: update-flake-lock
+
+on:
+  workflow_dispatch: # manual trigger from the Actions tab
+  schedule:
+    - cron: "0 0 * * *" # every day at 00:00 UTC
+
+permissions:
+  contents: write
+  id-token: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: update-flake-lock
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      HAS_UPDATE_PAT: ${{ secrets.GH_TOKEN_FOR_UPDATES != '' }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - id: update-with-pat
+        if: ${{ env.HAS_UPDATE_PAT == 'true' }}
+        uses: DeterminateSystems/update-flake-lock@main
+        with:
+          # PAT (fine-grained: Contents + Pull Requests read/write on this repo).
+          # Required because the default GITHUB_TOKEN cannot trigger other workflows,
+          # and we specifically want check.yml to re-run against the opened PR so
+          # the merge can be gated on it.
+          token: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
+          pr-title: "flake: bump inputs"
+          pr-body: |
+            Automated `nix flake update` run. CI on this PR must pass before
+            the auto-merge step in the `update-flake-lock` workflow will merge it.
+          pr-labels: |
+            dependencies
+            automated
+
+      - id: update-with-default-token
+        if: ${{ env.HAS_UPDATE_PAT != 'true' }}
+        uses: DeterminateSystems/update-flake-lock@main
+        with:
+          pr-title: "flake: bump inputs"
+          pr-body: |
+            Automated `nix flake update` run.
+
+            `GH_TOKEN_FOR_UPDATES` is not configured in this repository, so this
+            PR was opened with the default `GITHUB_TOKEN`. That means GitHub may
+            not automatically trigger CI for the PR, and this workflow will not
+            auto-merge it.
+          pr-labels: |
+            dependencies
+            automated
+
+      - name: Wait for PR checks and auto-merge
+        if: ${{ env.HAS_UPDATE_PAT == 'true' && steps.update-with-pat.outputs.pull-request-number != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
+          PR: ${{ steps.update-with-pat.outputs.pull-request-number }}
+        run: |
+          set -u
+          echo "waiting for checks on PR #$PR..."
+          if gh pr checks "$PR" --watch --fail-fast; then
+            echo "all checks passed — squash-merging"
+            gh pr merge "$PR" --squash --delete-branch
+          else
+            echo "checks failed — leaving PR open for review"
+            # don't fail the scheduled workflow; a red X here is noise.
+          fi
+
+      - name: Note missing PAT
+        if: ${{ env.HAS_UPDATE_PAT != 'true' && steps.update-with-default-token.outputs.pull-request-number != '' }}
+        run: |
+          echo "GH_TOKEN_FOR_UPDATES is not configured."
+          echo "Opened PR #${{ steps.update-with-default-token.outputs.pull-request-number }} with the default GITHUB_TOKEN."
+          echo "CI may need to be triggered manually, and this workflow will not auto-merge."
