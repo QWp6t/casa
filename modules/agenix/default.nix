@@ -28,6 +28,7 @@ in
       ];
 
   age.secrets = lib.mkMerge [
+    (maybeSecret "work-aws-config" ../../secrets/work-aws-config.age { })
     (maybeSecret "work-shell" ../../secrets/work-shell.age { })
     (maybeSecret "git-local-include" ../../secrets/git-local-include.age { })
     (maybeSecret "claude-routing" ../../secrets/claude-routing.age { })

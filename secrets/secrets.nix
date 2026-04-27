@@ -4,6 +4,7 @@ let
   everyone = [ me ];
 in
 {
+  "work-aws-config.age".publicKeys = everyone;
   "work-shell.age".publicKeys = everyone;
   "git-local-include.age".publicKeys = everyone;
   "claude-routing.age".publicKeys = everyone;

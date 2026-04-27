@@ -203,7 +203,10 @@
   };
 
   home.file =
-    lib.optionalAttrs (builtins.pathExists ../../secrets/git-local-include.age) {
+    lib.optionalAttrs (builtins.pathExists ../../secrets/work-aws-config.age) {
+      ".aws/config".source = config.lib.file.mkOutOfStoreSymlink "/run/agenix/work-aws-config";
+    }
+    // lib.optionalAttrs (builtins.pathExists ../../secrets/git-local-include.age) {
       ".gitconfig.local".source = config.lib.file.mkOutOfStoreSymlink "/run/agenix/git-local-include";
     }
     // lib.optionalAttrs isWsl {
