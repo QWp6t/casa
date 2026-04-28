@@ -1,0 +1,270 @@
+#!/usr/bin/env bash
+#
+# ssh-agent-op — pin a per-repo SSH public key based on git user.name
+#
+# For repos with a github.com remote, fetches the public keys from
+# https://github.com/<user.name>.keys and writes a per-repo
+# `core.sshCommand = ssh -i <pubkey> -o IdentitiesOnly=yes` entry
+# into ~/.gitconfig.autossh (never touches ~/.gitconfig itself).
+#
+# With IdentitiesOnly + an explicit pubkey, the 1Password SSH agent
+# is asked to sign only with the matching private key — no race, no
+# "too many authentication failures", no wrong-user auth.
+
+set -euo pipefail
+
+: "${AUTOSSH_CONFIG:=$HOME/.gitconfig.autossh}"
+: "${AUTOSSH_STATE_DIR:=$HOME/.local/state/ssh-agent-op}"
+: "${AUTOSSH_KEYS_DIR:=$HOME/.ssh/ssh-agent-op}"
+: "${AUTOSSH_TTL_SECONDS:=86400}"  # re-fetch keys after 24h with --if-needed
+
+QUIET=0
+
+log()  { (( QUIET )) || printf '%s\n' "$*"; }
+err()  { printf 'ssh-agent-op: %s\n' "$*" >&2; }
+die()  { err "$*"; exit 1; }
+
+usage() {
+    cat <<'EOF'
+Usage: ssh-agent-op <command> [args]
+
+Commands:
+    apply [--if-needed] [--quiet]
+        Configure the current repo to use the keys from
+        https://github.com/<user.name>.keys. Idempotent.
+
+        --if-needed   Exit silently if: not a repo, no github.com remote,
+                      no user.name, or cache is still fresh.
+        --quiet       Suppress non-error output.
+
+    list
+        Show registered repos and their GitHub user.
+
+    remove <path>
+        Remove the registration for a repo.
+
+    shell-init
+        Emit a zsh/bash chpwd hook that calls `apply --if-needed --quiet`
+        whenever you cd into a git repo. Add to your ~/.zshrc via:
+            eval "$(ssh-agent-op shell-init)"
+EOF
+}
+
+# ---------- helpers ----------
+
+_path_hash() {
+    # 12-char hash of a path, used to name per-repo config/state files.
+    printf '%s' "$1" | sha1sum | awk '{print substr($1, 1, 12)}'
+}
+
+_is_valid_github_username() {
+    # GitHub usernames: alphanumeric or hyphen, can't start/end with hyphen,
+    # max 39 chars. Rejects "First Last" or email-style user.name values.
+    [[ "$1" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?$ ]]
+}
+
+_has_github_remote() {
+    local url
+    while read -r _ url _; do
+        [[ "$url" == *github.com:* || "$url" == *github.com/* ]] && return 0
+    done < <(git -C "$1" remote -v 2>/dev/null)
+    return 1
+}
+
+_cache_fresh() {
+    # Returns 0 if state file exists, records the same user, and is younger
+    # than AUTOSSH_TTL_SECONDS. Used by --if-needed to skip re-fetching.
+    local state_file=$1 user=$2
+    [[ -f "$state_file" ]] || return 1
+    local cached_user cached_updated now
+    cached_user=$(awk -F= '/^user=/{print $2; exit}' "$state_file")
+    cached_updated=$(awk -F= '/^updated=/{print $2; exit}' "$state_file")
+    [[ "$cached_user" == "$user" ]] || return 1
+    now=$(date +%s)
+    (( now - ${cached_updated:-0} < AUTOSSH_TTL_SECONDS ))
+}
+
+# ---------- apply ----------
+
+cmd_apply() {
+    local if_needed=0
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --if-needed) if_needed=1 ;;
+            --quiet)     QUIET=1 ;;
+            -h|--help)   usage; return 0 ;;
+            *)           die "apply: unknown flag: $1" ;;
+        esac
+        shift
+    done
+
+    # Resolve repo root. With --if-needed, silently skip non-repos.
+    local toplevel
+    if ! toplevel=$(git rev-parse --show-toplevel 2>/dev/null); then
+        (( if_needed )) && return 0
+        die "not in a git repository"
+    fi
+
+    if ! _has_github_remote "$toplevel"; then
+        (( if_needed )) && return 0
+        die "no github.com remote in $toplevel"
+    fi
+
+    local user
+    user=$(git -C "$toplevel" config user.name 2>/dev/null || true)
+    if [[ -z "$user" ]]; then
+        (( if_needed )) && return 0
+        die "user.name is not set for $toplevel (try: git config user.name <github-username>)"
+    fi
+
+    if ! _is_valid_github_username "$user"; then
+        (( if_needed )) && return 0
+        die "user.name '$user' is not a valid GitHub username (must be alphanumeric/hyphen, <=39 chars)"
+    fi
+
+    local state_file="$AUTOSSH_STATE_DIR/repos/$(_path_hash "$toplevel")"
+    if (( if_needed )) && _cache_fresh "$state_file" "$user"; then
+        return 0
+    fi
+
+    log "ssh-agent-op: fetching https://github.com/$user.keys"
+    local keys_raw
+    if ! keys_raw=$(curl -fsSL --max-time 10 "https://github.com/$user.keys"); then
+        die "failed to fetch https://github.com/$user.keys (network error or user not found)"
+    fi
+    [[ -n "$keys_raw" ]] || die "no public keys published at github.com/$user"
+
+    # Write each valid public key line to its own file in the user's keydir.
+    local user_keys_dir="$AUTOSSH_KEYS_DIR/$user"
+    mkdir -p "$user_keys_dir"
+    chmod 700 "$AUTOSSH_KEYS_DIR" "$user_keys_dir"
+
+    local -a key_files=()
+    local i=0 line
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if ! printf '%s\n' "$line" | ssh-keygen -lf - >/dev/null 2>&1; then
+            err "skipping invalid key line $((i+1)) for $user"
+            continue
+        fi
+        local key_file="$user_keys_dir/key_${i}.pub"
+        printf '%s\n' "$line" > "$key_file"
+        chmod 644 "$key_file"
+        key_files+=("$key_file")
+        i=$((i + 1))
+    done <<< "$keys_raw"
+
+    (( ${#key_files[@]} > 0 )) || die "no valid public keys parsed for $user"
+
+    # Build the sshCommand string. Paths are under $HOME/.ssh/ssh-agent-op/,
+    # so double-quoting is sufficient.
+    local ssh_cmd='ssh -o IdentitiesOnly=yes'
+    for f in "${key_files[@]}"; do
+        ssh_cmd+=" -i \"$f\""
+    done
+
+    # Write the per-repo gitconfig fragment that ~/.gitconfig.autossh will
+    # include conditionally.
+    local repo_conf_dir="$AUTOSSH_STATE_DIR/configs"
+    local repo_conf="$repo_conf_dir/$(_path_hash "$toplevel").gitconfig"
+    mkdir -p "$repo_conf_dir"
+    cat > "$repo_conf" <<EOF
+# managed by ssh-agent-op — do not edit
+# repo:    $toplevel
+# user:    $user
+# updated: $(date -Iseconds)
+[core]
+    sshCommand = $ssh_cmd
+EOF
+
+    # Register/refresh the includeIf entry in ~/.gitconfig.autossh.
+    # Uses `git config --file` so we never hand-edit INI.
+    mkdir -p "$(dirname "$AUTOSSH_CONFIG")"
+    [[ -f "$AUTOSSH_CONFIG" ]] || : > "$AUTOSSH_CONFIG"
+    local section="includeIf.gitdir:$toplevel/"
+    git config --file "$AUTOSSH_CONFIG" --remove-section "$section" 2>/dev/null || true
+    git config --file "$AUTOSSH_CONFIG" "$section.path" "$repo_conf"
+
+    # Update the cache so --if-needed short-circuits next time.
+    mkdir -p "$(dirname "$state_file")"
+    {
+        printf 'user=%s\n' "$user"
+        printf 'updated=%s\n' "$(date +%s)"
+        printf 'repo_conf=%s\n' "$repo_conf"
+    } > "$state_file"
+
+    log "ssh-agent-op: $toplevel → github.com/$user (${#key_files[@]} key(s))"
+}
+
+# ---------- list ----------
+
+cmd_list() {
+    [[ -f "$AUTOSSH_CONFIG" ]] || return 0
+    local key path dir user
+    while read -r key path; do
+        # git --get-regexp lowercases section names on output
+        dir=${key#includeif.gitdir:}
+        dir=${dir%.path}
+        user=""
+        [[ -f "$path" ]] && user=$(awk '/^# user:/{print $3; exit}' "$path")
+        printf '%s\t%s\n' "${user:-?}" "$dir"
+    done < <(git config --file "$AUTOSSH_CONFIG" --get-regexp '^includeIf\.gitdir:.*\.path$' 2>/dev/null || true)
+}
+
+# ---------- remove ----------
+
+cmd_remove() {
+    local target=${1:-}
+    [[ -n "$target" ]] || die "usage: ssh-agent-op remove <path>"
+    target=$(cd "$target" 2>/dev/null && pwd -P || printf '%s' "$target")
+    [[ -f "$AUTOSSH_CONFIG" ]] || die "no registrations exist"
+    local section="includeIf.gitdir:$target/"
+    if git config --file "$AUTOSSH_CONFIG" --remove-section "$section" 2>/dev/null; then
+        local state_file="$AUTOSSH_STATE_DIR/repos/$(_path_hash "$target")"
+        rm -f "$state_file"
+        log "removed $target"
+    else
+        die "no registration found for $target"
+    fi
+}
+
+# ---------- shell-init ----------
+
+cmd_shell_init() {
+    cat <<'EOF'
+# ssh-agent-op shell hook. Source via: eval "$(ssh-agent-op shell-init)"
+_ssh_agent_op_chpwd() {
+    command -v ssh-agent-op >/dev/null 2>&1 || return 0
+    git rev-parse --show-toplevel >/dev/null 2>&1 || return 0
+    ssh-agent-op apply --if-needed --quiet 2>/dev/null || true
+}
+if [ -n "${ZSH_VERSION-}" ]; then
+    autoload -U add-zsh-hook
+    add-zsh-hook chpwd _ssh_agent_op_chpwd
+    _ssh_agent_op_chpwd
+elif [ -n "${BASH_VERSION-}" ]; then
+    case "${PROMPT_COMMAND:-}" in
+        *_ssh_agent_op_chpwd*) ;;
+        *) PROMPT_COMMAND="_ssh_agent_op_chpwd${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
+    esac
+fi
+EOF
+}
+
+# ---------- dispatch ----------
+
+main() {
+    local cmd=${1:-}
+    [[ -n "$cmd" ]] || { usage; exit 1; }
+    shift
+    case $cmd in
+        apply)          cmd_apply "$@" ;;
+        list)           cmd_list "$@" ;;
+        remove)         cmd_remove "$@" ;;
+        shell-init)     cmd_shell_init "$@" ;;
+        -h|--help|help) usage ;;
+        *)              err "unknown command: $cmd"; usage; exit 1 ;;
+    esac
+}
+
+main "$@"

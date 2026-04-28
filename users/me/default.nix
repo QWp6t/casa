@@ -5,6 +5,9 @@
   isWsl ? false,
   ...
 }:
+let
+  ssh-agent-op = pkgs.callPackage ./pkgs/ssh-agent-op { };
+in
 {
   home.username = "me";
   home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/me" else "/home/me";
@@ -34,6 +37,7 @@
       claude-code
       codex
       gh
+      ssh-agent-op
 
       awscli2
       awsume
