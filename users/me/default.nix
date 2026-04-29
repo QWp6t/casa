@@ -189,6 +189,7 @@ in
   );
 
   xdg.configFile = {
+    "ripgrep".text = "";
     "zsh/conf.d/01-env.zsh".source = ./zsh/conf.d/01-env.zsh;
     "zsh/conf.d/03-options.zsh".source = ./zsh/conf.d/03-options.zsh;
     "zsh/conf.d/04-ssh.zsh".source = ./zsh/conf.d/04-ssh.zsh;
