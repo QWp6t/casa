@@ -2,11 +2,17 @@
   config,
   pkgs,
   lib,
+  inputs,
   isWsl ? false,
   ...
 }:
 let
   ssh-agent-op = pkgs.callPackage ./pkgs/ssh-agent-op { };
+  quienPkg =
+    let
+      systemPackages = inputs.quien.packages.${pkgs.system};
+    in
+    if systemPackages ? default then systemPackages.default else systemPackages.quien;
 in
 {
   home.username = "me";
@@ -25,13 +31,18 @@ in
       age
 
       bat
+      dust
       eza
       fd
+      fastfetch
       fzf
       gnumake
       jq
       just
+      procs
       ripgrep
+      wget
+      xh
       zoxide
 
       claude-code
@@ -43,6 +54,7 @@ in
       awsume
       k9s
       kubectl
+      quienPkg
     ]
     ++ lib.optionals isWsl [
       socat

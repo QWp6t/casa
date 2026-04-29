@@ -38,8 +38,8 @@ if command -v dircolors >/dev/null 2>&1; then
     alias egrep="egrep --color=auto"
 fi
 
-if command -v exa >/dev/null 2>&1; then
-    alias ls="exa -h --git"
+if command -v eza >/dev/null 2>&1; then
+    alias ls="eza -h --git"
 fi
 
 if command -v fzf >/dev/null 2>&1; then

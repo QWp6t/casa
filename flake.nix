@@ -38,6 +38,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Modern whois replacement used by the shell alias.
+    quien = {
+      url = "github:retlehs/quien";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Secret management: age-encrypted files decrypted at activation.
     # See secrets/README.md for the one-time bootstrap.
     agenix = {
@@ -59,6 +65,7 @@
       home-manager,
       nixos-wsl,
       treefmt-nix,
+      quien,
       agenix,
       ...
     }:
