@@ -55,6 +55,7 @@ in
       shell = pkgs.zsh;
     };
 
+  programs.nix-ld.enable = true;
   programs.zsh.enable = true;
 
   systemd.services.win-ssh-agent-bridge = {
