@@ -32,6 +32,11 @@ in
     (maybeSecret "work-shell" ../../secrets/work-shell.age { })
     (maybeSecret "git-local-include" ../../secrets/git-local-include.age { })
     (maybeSecret "claude-routing" ../../secrets/claude-routing.age { })
+    (maybeSecret "claude-work-settings" ../../secrets/claude-work-settings.age { })
+    (maybeSecret "claude-work-briefing" ../../secrets/claude-work-briefing.age { })
+    (maybeSecret "claude-work-install" ../../secrets/claude-work-install.age {
+      mode = "0500";
+    })
     (maybeSecret "me-password" ../../secrets/me-password.age {
       owner = "root";
       group = "root";

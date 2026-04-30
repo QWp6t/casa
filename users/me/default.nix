@@ -188,6 +188,18 @@ in
     ''
   );
 
+  home.activation.installClaudeWork =
+    lib.mkIf (builtins.pathExists ../../secrets/claude-work-install.age)
+      (
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          install_secret="/run/agenix/claude-work-install"
+
+          if [ -x "$install_secret" ]; then
+            $DRY_RUN_CMD "$install_secret"
+          fi
+        ''
+      );
+
   xdg.configFile = {
     "ripgrep".text = "";
     "zsh/conf.d/01-env.zsh".source = ./zsh/conf.d/01-env.zsh;
