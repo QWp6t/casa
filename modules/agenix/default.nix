@@ -2,6 +2,9 @@
 let
   home = if pkgs.stdenv.isDarwin then "/Users/me" else "/home/me";
   claudeRoutingPath = "${home}/.local/share/agenix/claude-routing";
+  claudeWorkBriefingPath = "${home}/.local/share/agenix/claude-work-briefing";
+  claudeWorkInstallPath = "${home}/.local/share/agenix/claude-work-install";
+  claudeWorkSettingsPath = "${home}/.local/share/agenix/claude-work-settings";
   gitLocalIncludePath = "${home}/.local/share/agenix/git-local-include";
   workAwsConfigPath = "${home}/.local/share/agenix/work-aws-config";
   workShellPath = "${home}/.local/share/agenix/work-shell";
@@ -46,6 +49,19 @@ in
     })
     (maybeSecret "claude-routing" ../../secrets/claude-routing.age {
       path = claudeRoutingPath;
+      symlink = false;
+    })
+    (maybeSecret "claude-work-settings" ../../secrets/claude-work-settings.age {
+      path = claudeWorkSettingsPath;
+      symlink = false;
+    })
+    (maybeSecret "claude-work-briefing" ../../secrets/claude-work-briefing.age {
+      path = claudeWorkBriefingPath;
+      symlink = false;
+    })
+    (maybeSecret "claude-work-install" ../../secrets/claude-work-install.age {
+      path = claudeWorkInstallPath;
+      mode = "0500";
       symlink = false;
     })
     (maybeSecret "me-password" ../../secrets/me-password.age {
