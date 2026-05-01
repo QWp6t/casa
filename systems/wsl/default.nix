@@ -35,7 +35,7 @@ in
   wsl = {
     enable = true;
     defaultUser = "me";
-    interop.register = false;
+    interop.register = true;
   };
 
   security.sudo = {

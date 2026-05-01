@@ -16,7 +16,7 @@ let
   ssh-agent-op = pkgs.callPackage ./pkgs/ssh-agent-op { };
   quienPkg =
     let
-      systemPackages = inputs.quien.packages.${pkgs.system};
+      systemPackages = inputs.quien.packages.${pkgs.stdenv.hostPlatform.system};
     in
     if systemPackages ? default then systemPackages.default else systemPackages.quien;
 in
@@ -201,7 +201,8 @@ in
           install_secret="${claudeWorkInstallPath}"
 
           if [ -x "$install_secret" ]; then
-            $DRY_RUN_CMD "$install_secret"
+            PATH="${lib.makeBinPath [ pkgs.gnutar pkgs.gzip ]}:$PATH" \
+              $DRY_RUN_CMD "$install_secret"
           fi
         ''
       );
