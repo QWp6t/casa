@@ -7,6 +7,11 @@
   ...
 }:
 let
+  home = if pkgs.stdenv.isDarwin then "/Users/me" else "/home/me";
+  claudeRoutingPath = "${home}/.local/share/agenix/claude-routing";
+  gitLocalIncludePath = "${home}/.local/share/agenix/git-local-include";
+  workAwsConfigPath = "${home}/.local/share/agenix/work-aws-config";
+  workShellPath = "${home}/.local/share/agenix/work-shell";
   ssh-agent-op = pkgs.callPackage ./pkgs/ssh-agent-op { };
   quienPkg =
     let
@@ -16,7 +21,7 @@ let
 in
 {
   home.username = "me";
-  home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/me" else "/home/me";
+  home.homeDirectory = home;
 
   home.stateVersion = "25.11";
 
@@ -196,7 +201,6 @@ in
     "zsh/conf.d/05-history.zsh".source = ./zsh/conf.d/05-history.zsh;
     "zsh/conf.d/10-completions.zsh".source = ./zsh/conf.d/10-completions.zsh;
     "zsh/conf.d/awsume.zsh".source = ./zsh/conf.d/awsume.zsh;
-    "zsh/conf.d/claude.zsh".source = ./zsh/conf.d/claude.zsh;
     "zsh/conf.d/composer.zsh".source = ./zsh/conf.d/composer.zsh;
     "zsh/conf.d/fly.zsh".source = ./zsh/conf.d/fly.zsh;
     "zsh/conf.d/git.zsh".source = ./zsh/conf.d/git.zsh;
@@ -211,20 +215,22 @@ in
   // lib.optionalAttrs isWsl {
     "zsh/conf.d/02-omp.zsh".source = ./zsh/conf.d/02-omp.zsh;
   }
+  // lib.optionalAttrs (!builtins.pathExists ../../secrets/claude-routing.age) {
+    "zsh/conf.d/claude.zsh".source = ./zsh/conf.d/claude.zsh;
+  }
   // lib.optionalAttrs (builtins.pathExists ../../secrets/work-shell.age) {
-    "zsh/conf.d/99-work.zsh".source = config.lib.file.mkOutOfStoreSymlink "/run/agenix/work-shell";
+    "zsh/conf.d/99-work.zsh".source = config.lib.file.mkOutOfStoreSymlink workShellPath;
   }
   // lib.optionalAttrs (builtins.pathExists ../../secrets/claude-routing.age) {
-    "zsh/conf.d/99-work-claude.zsh".source =
-      config.lib.file.mkOutOfStoreSymlink "/run/agenix/claude-routing";
+    "zsh/conf.d/claude.zsh".source = config.lib.file.mkOutOfStoreSymlink claudeRoutingPath;
   };
 
   home.file =
     lib.optionalAttrs (builtins.pathExists ../../secrets/work-aws-config.age) {
-      ".aws/config".source = config.lib.file.mkOutOfStoreSymlink "/run/agenix/work-aws-config";
+      ".aws/config".source = config.lib.file.mkOutOfStoreSymlink workAwsConfigPath;
     }
     // lib.optionalAttrs (builtins.pathExists ../../secrets/git-local-include.age) {
-      ".gitconfig.local".source = config.lib.file.mkOutOfStoreSymlink "/run/agenix/git-local-include";
+      ".gitconfig.local".source = config.lib.file.mkOutOfStoreSymlink gitLocalIncludePath;
     }
     // lib.optionalAttrs isWsl {
       ".local/bin/op" = {
