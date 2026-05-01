@@ -6,6 +6,7 @@ let
   claudeWorkInstallPath = "${home}/.local/share/agenix/claude-work-install";
   claudeWorkSettingsPath = "${home}/.local/share/agenix/claude-work-settings";
   gitLocalIncludePath = "${home}/.local/share/agenix/git-local-include";
+  gitWorkIncludePath = "${home}/.local/share/agenix/git-work-include";
   workAwsConfigPath = "${home}/.local/share/agenix/work-aws-config";
   workShellPath = "${home}/.local/share/agenix/work-shell";
   userGroup = if pkgs.stdenv.isDarwin then "staff" else "users";
@@ -45,6 +46,10 @@ in
     })
     (maybeSecret "git-local-include" ../../secrets/git-local-include.age {
       path = gitLocalIncludePath;
+      symlink = false;
+    })
+    (maybeSecret "git-work-include" ../../secrets/git-work-include.age {
+      path = gitWorkIncludePath;
       symlink = false;
     })
     (maybeSecret "claude-routing" ../../secrets/claude-routing.age {

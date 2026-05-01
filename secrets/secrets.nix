@@ -7,6 +7,7 @@ in
   "work-aws-config.age".publicKeys = everyone;
   "work-shell.age".publicKeys = everyone;
   "git-local-include.age".publicKeys = everyone;
+  "git-work-include.age".publicKeys = everyone;
   "claude-routing.age".publicKeys = everyone;
   "claude-work-settings.age".publicKeys = everyone;
   "claude-work-briefing.age".publicKeys = everyone;

@@ -11,6 +11,7 @@ let
   claudeRoutingPath = "${home}/.local/share/agenix/claude-routing";
   claudeWorkInstallPath = "${home}/.local/share/agenix/claude-work-install";
   gitLocalIncludePath = "${home}/.local/share/agenix/git-local-include";
+  gitWorkIncludePath = "${home}/.local/share/agenix/git-work-include";
   workAwsConfigPath = "${home}/.local/share/agenix/work-aws-config";
   workShellPath = "${home}/.local/share/agenix/work-shell";
   ssh-agent-op = pkgs.callPackage ./pkgs/ssh-agent-op { };
@@ -245,6 +246,9 @@ in
     }
     // lib.optionalAttrs (builtins.pathExists ../../secrets/git-local-include.age) {
       ".gitconfig.local".source = config.lib.file.mkOutOfStoreSymlink gitLocalIncludePath;
+    }
+    // lib.optionalAttrs (builtins.pathExists ../../secrets/git-work-include.age) {
+      ".gitconfig.work".source = config.lib.file.mkOutOfStoreSymlink gitWorkIncludePath;
     }
     // lib.optionalAttrs isWsl {
       ".local/bin/op" = {

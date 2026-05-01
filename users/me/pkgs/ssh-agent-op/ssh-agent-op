@@ -28,7 +28,7 @@ usage() {
     cat <<'EOF'
 Usage: ssh-agent-op <command> [args]
 
-Commands:
+Per-repo (inside a git repo):
     apply [--if-needed] [--quiet]
         Configure the current repo to use the keys from
         https://github.com/<user.name>.keys. Idempotent.
@@ -43,9 +43,28 @@ Commands:
     remove <path>
         Remove the registration for a repo.
 
+Per-directory (outside any repo, e.g. a "projects" parent dir):
+    pin <dir> <github-user>
+        Pin a directory tree to a GitHub user's keys. The shell hook
+        will export GIT_SSH_COMMAND when cwd is inside <dir> and not
+        already in a repo, so plain `git clone` uses the right key.
+
+    unpin <dir>
+        Remove a directory pin.
+
+    pins
+        Show pinned directories and their GitHub user.
+
+    resolve [<cwd>]
+        Print the GIT_SSH_COMMAND value for the closest pinned ancestor
+        of <cwd> (default: $PWD), or nothing. Used by the shell hook.
+
+Shell integration:
     shell-init
-        Emit a zsh/bash chpwd hook that calls `apply --if-needed --quiet`
-        whenever you cd into a git repo. Add to your ~/.zshrc via:
+        Emit a zsh/bash chpwd hook. In a repo: runs `apply --if-needed`
+        and unsets GIT_SSH_COMMAND. Outside a repo: exports
+        GIT_SSH_COMMAND from `resolve`, or unsets it. Add to your
+        ~/.zshrc via:
             eval "$(ssh-agent-op shell-init)"
 EOF
 }
@@ -82,6 +101,63 @@ _cache_fresh() {
     [[ "$cached_user" == "$user" ]] || return 1
     now=$(date +%s)
     (( now - ${cached_updated:-0} < AUTOSSH_TTL_SECONDS ))
+}
+
+_fetch_user_keys() {
+    # Download <github-user>'s public keys to $AUTOSSH_KEYS_DIR/<user>/key_*.pub.
+    # Stale key files from a prior fetch are removed first so that a key
+    # rotated away on GitHub no longer lingers locally.
+    local user=$1
+    _is_valid_github_username "$user" \
+        || die "invalid github username: $user"
+
+    log "ssh-agent-op: fetching https://github.com/$user.keys"
+    local keys_raw
+    if ! keys_raw=$(curl -fsSL --max-time 10 "https://github.com/$user.keys"); then
+        die "failed to fetch https://github.com/$user.keys (network error or user not found)"
+    fi
+    [[ -n "$keys_raw" ]] || die "no public keys published at github.com/$user"
+
+    local user_keys_dir="$AUTOSSH_KEYS_DIR/$user"
+    mkdir -p "$user_keys_dir"
+    chmod 700 "$AUTOSSH_KEYS_DIR" "$user_keys_dir"
+    find "$user_keys_dir" -maxdepth 1 -name 'key_*.pub' -delete 2>/dev/null || true
+
+    local i=0 line
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if ! printf '%s\n' "$line" | ssh-keygen -lf - >/dev/null 2>&1; then
+            err "skipping invalid key line $((i+1)) for $user"
+            continue
+        fi
+        local key_file="$user_keys_dir/key_${i}.pub"
+        printf '%s\n' "$line" > "$key_file"
+        chmod 644 "$key_file"
+        i=$((i + 1))
+    done <<< "$keys_raw"
+
+    (( i > 0 )) || die "no valid public keys parsed for $user"
+}
+
+_count_user_keys() {
+    local user=$1
+    find "$AUTOSSH_KEYS_DIR/$user" -maxdepth 1 -name 'key_*.pub' 2>/dev/null | wc -l
+}
+
+_build_ssh_cmd() {
+    # Print the `core.sshCommand` value for <github-user>; return 1 if no
+    # keys are cached on disk for them.
+    local user=$1
+    local user_keys_dir="$AUTOSSH_KEYS_DIR/$user"
+    local cmd='ssh -o IdentitiesOnly=yes'
+    local f had=0
+    for f in "$user_keys_dir"/key_*.pub; do
+        [[ -f "$f" ]] || continue
+        cmd+=" -i \"$f\""
+        had=1
+    done
+    (( had )) || return 1
+    printf '%s\n' "$cmd"
 }
 
 # ---------- apply ----------
@@ -127,41 +203,11 @@ cmd_apply() {
         return 0
     fi
 
-    log "ssh-agent-op: fetching https://github.com/$user.keys"
-    local keys_raw
-    if ! keys_raw=$(curl -fsSL --max-time 10 "https://github.com/$user.keys"); then
-        die "failed to fetch https://github.com/$user.keys (network error or user not found)"
-    fi
-    [[ -n "$keys_raw" ]] || die "no public keys published at github.com/$user"
+    _fetch_user_keys "$user"
 
-    # Write each valid public key line to its own file in the user's keydir.
-    local user_keys_dir="$AUTOSSH_KEYS_DIR/$user"
-    mkdir -p "$user_keys_dir"
-    chmod 700 "$AUTOSSH_KEYS_DIR" "$user_keys_dir"
-
-    local -a key_files=()
-    local i=0 line
-    while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        if ! printf '%s\n' "$line" | ssh-keygen -lf - >/dev/null 2>&1; then
-            err "skipping invalid key line $((i+1)) for $user"
-            continue
-        fi
-        local key_file="$user_keys_dir/key_${i}.pub"
-        printf '%s\n' "$line" > "$key_file"
-        chmod 644 "$key_file"
-        key_files+=("$key_file")
-        i=$((i + 1))
-    done <<< "$keys_raw"
-
-    (( ${#key_files[@]} > 0 )) || die "no valid public keys parsed for $user"
-
-    # Build the sshCommand string. Paths are under $HOME/.ssh/ssh-agent-op/,
-    # so double-quoting is sufficient.
-    local ssh_cmd='ssh -o IdentitiesOnly=yes'
-    for f in "${key_files[@]}"; do
-        ssh_cmd+=" -i \"$f\""
-    done
+    local ssh_cmd
+    ssh_cmd=$(_build_ssh_cmd "$user") \
+        || die "no keys cached for $user"
 
     # Write the per-repo gitconfig fragment that ~/.gitconfig.autossh will
     # include conditionally.
@@ -193,7 +239,7 @@ EOF
         printf 'repo_conf=%s\n' "$repo_conf"
     } > "$state_file"
 
-    log "ssh-agent-op: $toplevel → github.com/$user (${#key_files[@]} key(s))"
+    log "ssh-agent-op: $toplevel → github.com/$user ($(_count_user_keys "$user") key(s))"
 }
 
 # ---------- list ----------
@@ -228,6 +274,78 @@ cmd_remove() {
     fi
 }
 
+# ---------- pin / unpin / pins / resolve ----------
+
+cmd_pin() {
+    local dir=${1:-} user=${2:-}
+    [[ -n "$dir" && -n "$user" ]] || die "usage: ssh-agent-op pin <dir> <github-user>"
+    [[ -d "$dir" ]] || die "directory does not exist: $dir"
+    _is_valid_github_username "$user" \
+        || die "invalid github username: $user"
+
+    local abs_dir
+    abs_dir=$(cd "$dir" && pwd -P)
+
+    if git -C "$abs_dir" rev-parse --show-toplevel >/dev/null 2>&1; then
+        err "warning: $abs_dir is itself inside a git repo; the chpwd hook short-circuits to per-repo behavior there. You probably want 'apply'."
+    fi
+
+    _fetch_user_keys "$user"
+
+    local pin_dir="$AUTOSSH_STATE_DIR/dirs"
+    mkdir -p "$pin_dir"
+    local pin_file="$pin_dir/$(_path_hash "$abs_dir")"
+    {
+        printf 'dir=%s\n' "$abs_dir"
+        printf 'user=%s\n' "$user"
+        printf 'updated=%s\n' "$(date +%s)"
+    } > "$pin_file"
+
+    log "ssh-agent-op: pinned $abs_dir → github.com/$user ($(_count_user_keys "$user") key(s))"
+}
+
+cmd_unpin() {
+    local dir=${1:-}
+    [[ -n "$dir" ]] || die "usage: ssh-agent-op unpin <dir>"
+    local abs_dir
+    abs_dir=$(cd "$dir" 2>/dev/null && pwd -P) || abs_dir=$dir
+    local pin_file="$AUTOSSH_STATE_DIR/dirs/$(_path_hash "$abs_dir")"
+    [[ -f "$pin_file" ]] || die "no pin found for $abs_dir"
+    rm -f "$pin_file"
+    log "ssh-agent-op: unpinned $abs_dir"
+}
+
+cmd_pins() {
+    local pin_dir="$AUTOSSH_STATE_DIR/dirs"
+    [[ -d "$pin_dir" ]] || return 0
+    local f dir user
+    for f in "$pin_dir"/*; do
+        [[ -f "$f" ]] || continue
+        dir=$(awk -F= '/^dir=/{print $2; exit}' "$f")
+        user=$(awk -F= '/^user=/{print $2; exit}' "$f")
+        printf '%s\t%s\n' "${user:-?}" "${dir:-?}"
+    done
+}
+
+cmd_resolve() {
+    # Walk up from <cwd> looking for a pinned ancestor. If found, print the
+    # sshCommand for that user. Silent + exit 0 if no pin matches.
+    local cwd=${1:-$PWD}
+    cwd=$(cd "$cwd" 2>/dev/null && pwd -P) || return 0
+
+    local d=$cwd pin_file user
+    while [[ -n "$d" ]]; do
+        pin_file="$AUTOSSH_STATE_DIR/dirs/$(_path_hash "$d")"
+        if [[ -f "$pin_file" ]]; then
+            user=$(awk -F= '/^user=/{print $2; exit}' "$pin_file")
+            [[ -n "$user" ]] && _build_ssh_cmd "$user" || true
+            return 0
+        fi
+        [[ "$d" == "/" ]] && break
+        d=$(dirname "$d")
+    done
+}
+
 # ---------- shell-init ----------
 
 cmd_shell_init() {
@@ -235,8 +353,24 @@ cmd_shell_init() {
 # ssh-agent-op shell hook. Source via: eval "$(ssh-agent-op shell-init)"
 _ssh_agent_op_chpwd() {
     command -v ssh-agent-op >/dev/null 2>&1 || return 0
-    git rev-parse --show-toplevel >/dev/null 2>&1 || return 0
-    ssh-agent-op apply --if-needed --quiet 2>/dev/null || true
+    if git rev-parse --show-toplevel >/dev/null 2>&1; then
+        # Inside a git repo: per-repo `core.sshCommand` (set by `apply`)
+        # owns the SSH key choice. Clear any parent-dir env var so it
+        # can't override.
+        unset GIT_SSH_COMMAND
+        ssh-agent-op apply --if-needed --quiet 2>/dev/null || true
+    else
+        # Outside any repo: if a pinned ancestor matches the cwd, export
+        # GIT_SSH_COMMAND so plain `git clone` uses the right key.
+        local _ssh_agent_op_cmd
+        _ssh_agent_op_cmd=$(ssh-agent-op resolve 2>/dev/null || true)
+        if [ -n "$_ssh_agent_op_cmd" ]; then
+            export GIT_SSH_COMMAND="$_ssh_agent_op_cmd"
+        else
+            unset GIT_SSH_COMMAND
+        fi
+        unset _ssh_agent_op_cmd
+    fi
 }
 if [ -n "${ZSH_VERSION-}" ]; then
     autoload -U add-zsh-hook
@@ -261,6 +395,10 @@ main() {
         apply)          cmd_apply "$@" ;;
         list)           cmd_list "$@" ;;
         remove)         cmd_remove "$@" ;;
+        pin)            cmd_pin "$@" ;;
+        unpin)          cmd_unpin "$@" ;;
+        pins)           cmd_pins "$@" ;;
+        resolve)        cmd_resolve "$@" ;;
         shell-init)     cmd_shell_init "$@" ;;
         -h|--help|help) usage ;;
         *)              err "unknown command: $cmd"; usage; exit 1 ;;

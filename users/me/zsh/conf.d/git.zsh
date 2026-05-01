@@ -1,7 +1,5 @@
-if ! grep -qi microsoft /proc/version 2>/dev/null; then
-    if command -v ssh-agent-op >/dev/null 2>&1; then
-        eval "$(ssh-agent-op shell-init)"
-    fi
+if command -v ssh-agent-op >/dev/null 2>&1; then
+    eval "$(ssh-agent-op shell-init)"
 fi
 
 export GH_TELEMETRY=false
