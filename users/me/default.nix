@@ -9,6 +9,7 @@
 let
   home = if pkgs.stdenv.isDarwin then "/Users/me" else "/home/me";
   claudeRoutingPath = "${home}/.local/share/agenix/claude-routing";
+  claudeWorkInstallPath = "${home}/.local/share/agenix/claude-work-install";
   gitLocalIncludePath = "${home}/.local/share/agenix/git-local-include";
   workAwsConfigPath = "${home}/.local/share/agenix/work-aws-config";
   workShellPath = "${home}/.local/share/agenix/work-shell";
@@ -192,6 +193,18 @@ in
       fi
     ''
   );
+
+  home.activation.installClaudeWork =
+    lib.mkIf (builtins.pathExists ../../secrets/claude-work-install.age)
+      (
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          install_secret="${claudeWorkInstallPath}"
+
+          if [ -x "$install_secret" ]; then
+            $DRY_RUN_CMD "$install_secret"
+          fi
+        ''
+      );
 
   xdg.configFile = {
     "ripgrep".text = "";
