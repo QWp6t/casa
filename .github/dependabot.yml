@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "nix"
+    directory: "/"
+    schedule:
+      interval: "cron"
+      cronjob: "0 0 * * *"
+      timezone: "UTC"
+    groups:
+      flake-inputs:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "flake"
