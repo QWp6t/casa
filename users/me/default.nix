@@ -46,9 +46,12 @@ in
       gnumake
       jq
       just
+      (lib.lowPrio php)
+      phpPackages.composer
       procs
       ripgrep
       wget
+      wp-cli
       xh
       zoxide
 
