@@ -53,6 +53,8 @@ in
       wget
       wp-cli
       xh
+      unzip
+      zip
       zoxide
 
       claude-code
