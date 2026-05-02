@@ -202,7 +202,12 @@ in
           install_secret="${claudeWorkInstallPath}"
 
           if [ -x "$install_secret" ]; then
-            PATH="${lib.makeBinPath [ pkgs.gnutar pkgs.gzip ]}:$PATH" \
+            PATH="${
+              lib.makeBinPath [
+                pkgs.gnutar
+                pkgs.gzip
+              ]
+            }:$PATH" \
               $DRY_RUN_CMD "$install_secret"
           fi
         ''
