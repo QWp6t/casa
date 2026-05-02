@@ -93,6 +93,7 @@
           devShells.default = pkgs.mkShell {
             packages = [
               pkgs.just
+              pkgs.mago
               pkgs.nixd
               treefmtEval.config.build.wrapper
             ];

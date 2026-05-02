@@ -46,6 +46,7 @@ in
       gnumake
       jq
       just
+      mago
       (lib.lowPrio php)
       phpPackages.composer
       procs

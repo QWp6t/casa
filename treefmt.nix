@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 {
   projectRootFile = "flake.nix";
 
@@ -11,4 +11,10 @@
     "*.lock"
     "LICENSE"
   ];
+
+  settings.formatter.mago = {
+    command = pkgs.mago;
+    options = [ "format" ];
+    includes = [ "*.php" ];
+  };
 }
