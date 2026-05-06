@@ -47,6 +47,7 @@ in
       jq
       just
       mago
+      nodejs
       (lib.lowPrio php)
       phpPackages.composer
       procs
