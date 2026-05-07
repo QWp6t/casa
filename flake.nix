@@ -54,6 +54,13 @@
         home-manager.follows = "home-manager";
       };
     };
+
+    # Auto-updated packages for AI coding agents (agent-browser, etc.).
+    # Tracks upstream releases via numtide's 4x/day update workflow.
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

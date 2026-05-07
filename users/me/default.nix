@@ -15,6 +15,7 @@ let
   workAwsConfigPath = "${home}/.local/share/agenix/work-aws-config";
   workShellPath = "${home}/.local/share/agenix/work-shell";
   ssh-agent-op = pkgs.callPackage ./pkgs/ssh-agent-op { };
+  agent-browser = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.agent-browser;
   quienPkg =
     let
       systemPackages = inputs.quien.packages.${pkgs.stdenv.hostPlatform.system};
@@ -59,6 +60,7 @@ in
       zip
       zoxide
 
+      agent-browser
       claude-code
       codex
       gh
