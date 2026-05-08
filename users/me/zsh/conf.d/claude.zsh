@@ -1,7 +1,8 @@
 export CLAUDE_CODE_EFFORT_LEVEL=max
 export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
 export CLAUDE_CODE_NO_FLICKER=1
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 claude() {
-  CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" command claude --allow-dangerously-skip-permissions "$@"
+  CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" command claude "$@"
 }

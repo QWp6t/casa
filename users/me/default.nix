@@ -213,14 +213,56 @@ in
           if [ -x "$install_secret" ]; then
             PATH="${
               lib.makeBinPath [
+                pkgs.coreutils
                 pkgs.gnutar
                 pkgs.gzip
+                pkgs.jq
               ]
             }:$PATH" \
               $DRY_RUN_CMD "$install_secret"
           fi
         ''
       );
+
+  home.activation.installClaudeUser = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    PATH="${
+      lib.makeBinPath [
+        pkgs.coreutils
+        pkgs.jq
+      ]
+    }:$PATH"
+
+    managed=${./claude/settings.json}
+    target="${config.home.homeDirectory}/.claude/settings.json"
+
+    $DRY_RUN_CMD mkdir -p "$(dirname "$target")"
+
+    # Strip legacy symlinks so we own a regular writable file.
+    [ -L "$target" ] && $DRY_RUN_CMD rm -f "$target"
+
+    work="$(mktemp -d)"
+    trap 'rm -rf "$work"' EXIT
+
+    existing="$work/existing.json"
+    if [ -e "$target" ]; then
+      if jq -e . "$target" > /dev/null 2>&1; then
+        cp "$target" "$existing"
+      else
+        backup="$target.broken-$(date +%Y%m%d-%H%M%S)"
+        $DRY_RUN_CMD mv "$target" "$backup"
+        echo "{}" > "$existing"
+        echo "installClaudeUser: backed up malformed settings.json to $backup" >&2
+      fi
+    else
+      echo "{}" > "$existing"
+    fi
+
+    # Deep-merge: casa-managed wins on conflicts; arrays replace; objects merge recursively.
+    staged="$(dirname "$target")/.settings.json.staged.$$"
+    jq -s '.[0] * .[1]' "$existing" "$managed" > "$staged"
+    $DRY_RUN_CMD chmod 644 "$staged"
+    $DRY_RUN_CMD mv "$staged" "$target"
+  '';
 
   xdg.configFile = {
     "ripgrep".text = "";
