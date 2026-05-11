@@ -39,6 +39,7 @@ in
       age
 
       bat
+      croc
       dust
       eza
       fd
