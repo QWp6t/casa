@@ -44,6 +44,7 @@ in
       eza
       fd
       fastfetch
+      ffmpeg
       fzf
       gnumake
       jq
