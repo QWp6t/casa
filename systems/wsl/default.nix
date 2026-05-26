@@ -52,8 +52,13 @@ in
       hashedPasswordFile = config.age.secrets.me-password.path;
     }
     // {
+      # Native WSL systemd does not reliably start per-user managers for shell
+      # logins. Keep the user bus available so nixos-rebuild can reload user
+      # units without noisy D-Bus activation failures.
+      linger = true;
       shell = pkgs.zsh;
     };
+  users.users.root.linger = true;
 
   programs.nix-ld.enable = true;
   programs.zsh.enable = true;

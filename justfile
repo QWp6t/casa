@@ -50,8 +50,8 @@ _switch-wsl:
     fi
 
     if [ "$rc" -eq 4 ] \
-        && grep -Fq 'reloading user units for nixos...' "$log" \
-        && grep -Fq 'warning: user activation for nixos failed' "$log" \
+        && grep -Eq '^reloading user units for .+\.\.\.$' "$log" \
+        && grep -Eq '^warning: user activation for .+ failed$' "$log" \
         && (
             grep -Fq '/run/user/1000/bus' "$log" \
             || grep -Fq 'Unable to autolaunch a dbus-daemon without a $DISPLAY for X11' "$log" \
