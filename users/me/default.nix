@@ -44,6 +44,7 @@ in
       eza
       fd
       fastfetch
+      flyctl
       ffmpeg
       fzf
       gnumake
