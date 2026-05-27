@@ -63,6 +63,14 @@ in
   programs.nix-ld.enable = true;
   programs.zsh.enable = true;
 
+  # Codex Desktop's Windows/WSL launcher currently expects this FHS path.
+  # NixOS does not expose it by default, so provide a narrow compatibility shim.
+  systemd.tmpfiles.rules = [
+    "d /usr 0755 root root - -"
+    "d /usr/bin 0755 root root - -"
+    "L+ /usr/bin/bash - - - - ${pkgs.bashInteractive}/bin/bash"
+  ];
+
   systemd.services.win-ssh-agent-bridge = {
     description = "Bridge WSL SSH_AUTH_SOCK to Windows OpenSSH agent (via npiperelay)";
     wantedBy = [ "multi-user.target" ];
