@@ -89,6 +89,7 @@ in
   };
 
   environment.systemPackages = [
+    pkgs.bubblewrap
     pkgs.git
   ];
 
