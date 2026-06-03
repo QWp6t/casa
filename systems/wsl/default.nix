@@ -69,6 +69,8 @@ in
     "d /usr 0755 root root - -"
     "d /usr/bin 0755 root root - -"
     "L+ /usr/bin/bash - - - - ${pkgs.bashInteractive}/bin/bash"
+    "L+ /usr/bin/google-chrome - - - - ${pkgs.google-chrome}/bin/google-chrome"
+    "L+ /usr/bin/google-chrome-stable - - - - ${pkgs.google-chrome}/bin/google-chrome-stable"
   ];
 
   systemd.services.win-ssh-agent-bridge = {
