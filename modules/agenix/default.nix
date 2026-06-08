@@ -5,6 +5,8 @@ let
   claudeWorkBriefingPath = "${home}/.local/share/agenix/claude-work-briefing";
   claudeWorkInstallPath = "${home}/.local/share/agenix/claude-work-install";
   claudeWorkSettingsPath = "${home}/.local/share/agenix/claude-work-settings";
+  codexSentryAuthTokenPath = "${home}/.local/share/agenix/codex-sentry-auth-token";
+  gitClientIncludePath = "${home}/.local/share/agenix/git-client-include";
   gitLocalIncludePath = "${home}/.local/share/agenix/git-local-include";
   gitWorkIncludePath = "${home}/.local/share/agenix/git-work-include";
   workAwsConfigPath = "${home}/.local/share/agenix/work-aws-config";
@@ -48,6 +50,10 @@ in
       path = gitLocalIncludePath;
       symlink = false;
     })
+    (maybeSecret "git-client-include" ../../secrets/git-client-include.age {
+      path = gitClientIncludePath;
+      symlink = false;
+    })
     (maybeSecret "git-work-include" ../../secrets/git-work-include.age {
       path = gitWorkIncludePath;
       symlink = false;
@@ -67,6 +73,11 @@ in
     (maybeSecret "claude-work-install" ../../secrets/claude-work-install.age {
       path = claudeWorkInstallPath;
       mode = "0500";
+      symlink = false;
+    })
+    (maybeSecret "codex-sentry-auth-token" ../../secrets/codex-sentry-auth-token.age {
+      path = codexSentryAuthTokenPath;
+      mode = "0400";
       symlink = false;
     })
     (maybeSecret "me-password" ../../secrets/me-password.age {

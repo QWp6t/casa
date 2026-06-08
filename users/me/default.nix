@@ -276,6 +276,7 @@ in
     "zsh/conf.d/10-completions.zsh".source = ./zsh/conf.d/10-completions.zsh;
     "zsh/conf.d/awsume.zsh".source = ./zsh/conf.d/awsume.zsh;
     "zsh/conf.d/composer.zsh".source = ./zsh/conf.d/composer.zsh;
+    "zsh/conf.d/codex.zsh".source = ./zsh/conf.d/codex.zsh;
     "zsh/conf.d/git.zsh".source = ./zsh/conf.d/git.zsh;
     "zsh/conf.d/zoxide.zsh".source = ./zsh/conf.d/zoxide.zsh;
 
