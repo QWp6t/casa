@@ -10,5 +10,7 @@ updates:
       flake-inputs:
         patterns:
           - "*"
+        exclude-patterns:
+          - "llm-agents"
     commit-message:
       prefix: "flake"
