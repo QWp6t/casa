@@ -1,6 +1,11 @@
 {
   description = "me's NixOS and nix-darwin configurations (casa)";
 
+  nixConfig = {
+    extra-substituters = [ "https://cache.numtide.com" ];
+    extra-trusted-public-keys = [ "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=" ];
+  };
+
   inputs = {
     # Package set. nixos-unstable tracks the latest package versions;
     # switch to `nixos-25.11` for the stable channel if you'd rather trade fresh
