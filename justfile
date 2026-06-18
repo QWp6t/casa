@@ -41,7 +41,7 @@ _switch-wsl:
     trap 'rm -f "$log"; {{just_executable()}} lock' EXIT
     {{just_executable()}} unlock
     set +e
-    sudo nixos-rebuild switch --flake .#wsl 2>&1 | tee "$log"
+    sudo nixos-rebuild switch --flake .#wsl --accept-flake-config 2>&1 | tee "$log"
     rc=${PIPESTATUS[0]}
     set -e
 
@@ -64,7 +64,7 @@ _switch-wsl:
     exit "$rc"
 
 _switch-mac:
-    sudo darwin-rebuild switch --flake .#mac
+    sudo darwin-rebuild switch --flake .#mac --accept-flake-config
 
 unlock:
     #!/usr/bin/env bash
@@ -87,17 +87,17 @@ update input='':
     set -euo pipefail
 
     if [ -n "{{input}}" ]; then
-        nix flake update --update-input "{{input}}"
+        nix flake update --accept-flake-config --update-input "{{input}}"
     else
-        nix flake update
+        nix flake update --accept-flake-config
     fi
 
 check:
     nix flake check --accept-flake-config
 
 fmt:
-    nix fmt
+    nix fmt --accept-flake-config
 
 build-all:
-    nix build .#nixosConfigurations.wsl.config.system.build.toplevel --no-link
-    nix build .#darwinConfigurations.mac.system --no-link
+    nix build .#nixosConfigurations.wsl.config.system.build.toplevel --accept-flake-config --no-link
+    nix build .#darwinConfigurations.mac.system --accept-flake-config --no-link
