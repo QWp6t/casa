@@ -132,6 +132,7 @@ in
         wip = "!git commit -m 'wip'";
         wipa = "!git add --all; git commit -m 'wip'";
         poke = "!git commit --allow-empty --allow-empty-message -m ''";
+        url = "!git remote get-url origin | sed -E 's#git@github.com:#https://github.com/#; s#[.]git$##'";
       };
 
       credential."https://github.com".helper = [
