@@ -62,10 +62,10 @@
 
     # Auto-updated packages for AI coding agents (agent-browser, etc.).
     # Tracks upstream releases via numtide's 4x/day update workflow.
-    llm-agents = {
-      url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Deliberately does NOT follow our nixpkgs: building against llm-agents'
+    # own pin is what lets cache.numtide.com serve pre-built binaries, so CI
+    # (and local rebuilds) don't compile agent-browser/codex from source.
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
   outputs =
