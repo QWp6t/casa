@@ -19,6 +19,9 @@ let
   agent-browser = llmAgentPackages.agent-browser;
   claude-code = llmAgentPackages.claude-code;
   codex = llmAgentPackages.codex;
+  cursor-agent = llmAgentPackages.cursor-agent;
+  grok = llmAgentPackages.grok;
+  opencode = llmAgentPackages.opencode;
   quienPkg =
     let
       systemPackages = inputs.quien.packages.${pkgs.stdenv.hostPlatform.system};
@@ -69,6 +72,9 @@ in
       agent-browser
       claude-code
       codex
+      cursor-agent
+      grok
+      opencode
       gh
       ssh-agent-op
 
