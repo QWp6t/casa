@@ -65,6 +65,7 @@ in
       procs
       ripgrep
       wget
+      worktrunk
       wp-cli
       xh
       unzip
@@ -291,6 +292,7 @@ in
     "zsh/conf.d/composer.zsh".source = ./zsh/conf.d/composer.zsh;
     "zsh/conf.d/codex.zsh".source = ./zsh/conf.d/codex.zsh;
     "zsh/conf.d/git.zsh".source = ./zsh/conf.d/git.zsh;
+    "zsh/conf.d/worktrunk.zsh".source = ./zsh/conf.d/worktrunk.zsh;
     "zsh/conf.d/zoxide.zsh".source = ./zsh/conf.d/zoxide.zsh;
 
     "zsh/conf.d/99-aliases.zsh".text = lib.concatStringsSep "\n\n" (
