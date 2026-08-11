@@ -59,6 +59,7 @@ in
       just
       mago
       nodejs
+      openssl
       (lib.lowPrio php)
       phpPackages.composer
       procs
