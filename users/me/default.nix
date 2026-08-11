@@ -22,6 +22,7 @@ let
   cursor-agent = llmAgentPackages.cursor-agent;
   grok = llmAgentPackages.grok;
   opencode = llmAgentPackages.opencode;
+  rtk = llmAgentPackages.rtk;
   quienPkg =
     let
       systemPackages = inputs.quien.packages.${pkgs.stdenv.hostPlatform.system};
@@ -75,6 +76,7 @@ in
       cursor-agent
       grok
       opencode
+      rtk
       gh
       ssh-agent-op
 
