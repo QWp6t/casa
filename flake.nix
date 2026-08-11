@@ -49,6 +49,20 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Basecamp's CLI. Not in nixpkgs; upstream ships the package in its
+    # own flake (nix/package.nix), so we track that instead of vendoring
+    # a copy whose vendorHash we'd have to refresh on every release.
+    #
+    # Pinned to a release tag, NOT a branch: upstream regenerates the
+    # package's vendorHash only at release time, so a mid-cycle `main`
+    # can fail to build. Dependabot's nix ecosystem only re-locks
+    # flake.lock revs and never rewrites this ref, so the tag is bumped
+    # by .github/workflows/basecamp-release.yml instead.
+    basecamp-cli = {
+      url = "github:basecamp/basecamp-cli/v0.9.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Secret management: age-encrypted files decrypted at activation.
     # See secrets/README.md for the one-time bootstrap.
     agenix = {

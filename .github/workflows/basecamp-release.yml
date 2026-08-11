@@ -1,0 +1,88 @@
+name: basecamp-cli release
+
+# Dependabot's nix ecosystem only re-locks flake.lock revs; it never rewrites
+# an input's ref in flake.nix. Since basecamp-cli is pinned to a release tag
+# (see the comment on the input), nothing would ever move it. This job does.
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: bump pinned tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve tags
+        id: tags
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          current=$(grep -oP 'basecamp-cli/\Kv[^"]+' flake.nix)
+          latest=$(gh api repos/basecamp/basecamp-cli/releases/latest --jq .tag_name)
+
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+
+          if [ "$current" = "$latest" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "basecamp-cli is current at $current"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "basecamp-cli $current -> $latest"
+          fi
+
+      - uses: DeterminateSystems/nix-installer-action@main
+        if: steps.tags.outputs.changed == 'true'
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+        if: steps.tags.outputs.changed == 'true'
+
+      - name: Update pin
+        if: steps.tags.outputs.changed == 'true'
+        env:
+          CURRENT: ${{ steps.tags.outputs.current }}
+          LATEST: ${{ steps.tags.outputs.latest }}
+        run: |
+          sed -i "s|basecamp-cli/$CURRENT|basecamp-cli/$LATEST|" flake.nix
+          nix flake update basecamp-cli --accept-flake-config
+
+      # PRs opened with the default GITHUB_TOKEN do not trigger check.yml, so
+      # the build that would have gated this PR runs here instead. A release
+      # whose vendorHash is stale fails the job and never becomes a PR.
+      - name: Build wsl host
+        if: steps.tags.outputs.changed == 'true'
+        run: nix build --accept-flake-config .#nixosConfigurations.wsl.config.system.build.toplevel
+
+      - name: Open PR
+        if: steps.tags.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT: ${{ steps.tags.outputs.current }}
+          LATEST: ${{ steps.tags.outputs.latest }}
+        run: |
+          branch="basecamp-cli/$LATEST"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git switch -c "$branch"
+          git commit -am "flake: bump basecamp-cli from $CURRENT to $LATEST"
+          git push -f origin "$branch"
+
+          if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+            gh pr create \
+              --head "$branch" \
+              --title "flake: bump basecamp-cli from $CURRENT to $LATEST" \
+              --body "Bumps [basecamp-cli](https://github.com/basecamp/basecamp-cli) from \`$CURRENT\` to \`$LATEST\`.
+
+          [Release notes](https://github.com/basecamp/basecamp-cli/releases/tag/$LATEST) · [Compare](https://github.com/basecamp/basecamp-cli/compare/$CURRENT...$LATEST)
+
+          The wsl host was built successfully against this tag before this PR was opened."
+          fi

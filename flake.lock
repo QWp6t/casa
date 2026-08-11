@@ -27,6 +27,27 @@
         "type": "github"
       }
     },
+    "basecamp-cli": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785979955,
+        "narHash": "sha256-OP96Ak4OBydR98keoNYKdGY8j+wrIys0LafSZgwS20g=",
+        "owner": "basecamp",
+        "repo": "basecamp-cli",
+        "rev": "61a5591de1da9bc99c56b8072a4d6bad2c9b9e47",
+        "type": "github"
+      },
+      "original": {
+        "owner": "basecamp",
+        "ref": "v0.9.0",
+        "repo": "basecamp-cli",
+        "type": "github"
+      }
+    },
     "bun2nix": {
       "inputs": {
         "flake-parts": [
@@ -274,6 +295,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "basecamp-cli": "basecamp-cli",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "llm-agents": "llm-agents",

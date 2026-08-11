@@ -28,6 +28,7 @@ let
       systemPackages = inputs.quien.packages.${pkgs.stdenv.hostPlatform.system};
     in
     if systemPackages ? default then systemPackages.default else systemPackages.quien;
+  basecamp = inputs.basecamp-cli.packages.${pkgs.stdenv.hostPlatform.system}.basecamp;
 in
 {
   home.username = "me";
@@ -82,6 +83,7 @@ in
 
       awscli2
       awsume
+      basecamp
       k9s
       kubectl
       quienPkg
