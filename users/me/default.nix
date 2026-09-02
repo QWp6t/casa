@@ -68,6 +68,7 @@ in
       worktrunk
       wp-cli
       xh
+      yq
       unzip
       zip
       zoxide
