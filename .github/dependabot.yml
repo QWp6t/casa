@@ -6,6 +6,10 @@ updates:
       interval: "cron"
       cronjob: "0 0 * * *"
       timezone: "UTC"
+    cooldown:
+      default-days: 3
+      exclude:
+        - "llm-agents"
     groups:
       flake-inputs:
         patterns:
