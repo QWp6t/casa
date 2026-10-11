@@ -59,7 +59,7 @@
     # flake.lock revs and never rewrites this ref, so the tag is bumped
     # by .github/workflows/basecamp-release.yml instead.
     basecamp-cli = {
-      url = "github:basecamp/basecamp-cli/v0.12.0";
+      url = "github:basecamp/basecamp-cli/v0.13.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
