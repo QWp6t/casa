@@ -27,16 +27,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1791402101,
-        "narHash": "sha256-1+jHfilH+YPyF0uc/jF3EorAlZ/WmrmD+bmwTJm4YLA=",
+        "lastModified": 1791865101,
+        "narHash": "sha256-w0W7pAnFU7YhhU1a9n5Mo1EFBcwzf+9VN+92OUbTKPA=",
         "owner": "basecamp",
         "repo": "basecamp-cli",
-        "rev": "40e4757702cf695cfec6b47b9d768177b3697014",
+        "rev": "d742884a950a1c1376e3b6cb00a3c6d97d5dfa25",
         "type": "github"
       },
       "original": {
         "owner": "basecamp",
-        "ref": "v0.13.0",
+        "ref": "v0.13.2",
         "repo": "basecamp-cli",
         "type": "github"
       }
@@ -273,11 +273,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1782256315,
-        "narHash": "sha256-ik65qmFTe6J/hCg0hLWPozNU6eiDjhvIGT6CeWkYkw4=",
+        "lastModified": 1791929879,
+        "narHash": "sha256-nb09yIaZAz/8aYIKL5Ds/KAch52jepcE8F0DhF8CmGc=",
         "owner": "retlehs",
         "repo": "quien",
-        "rev": "f94d51559476f92b543a562e8c8aa25b9abe345c",
+        "rev": "fdb41c62171d0f96554dcfab687d48976861d1bf",
         "type": "github"
       },
       "original": {
@@ -358,11 +358,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791490544,
-        "narHash": "sha256-qScE7Wz6Zg7eg8ItUpnkmKgst8weWschGe0E8jM4rj4=",
+        "lastModified": 1791885023,
+        "narHash": "sha256-C3alQ2MEt0zVrUSho5NUDo3jmhbff72++bfwoqT9Omo=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "4cfe8d7065cc8ca91c0a50361b6dd74920eeb1f5",
+        "rev": "0d6d739a833ba9a9c93034862e4a7b061a062a1c",
         "type": "github"
       },
       "original": {
