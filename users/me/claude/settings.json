@@ -1,14 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsx:*)",
       "Bash(docker *)",
       "Bash(make *)",
       "Bash(open *)",
       "Bash(echo *)",
       "Bash(bundle *)",
       "Bash(npm *)",
-      "Bash(npx *)",
       "Bash(curl *)",
       "Bash(which *)",
       "Bash(pwd)",
@@ -23,9 +21,6 @@
       "Bash(find *)",
       "Bash(cp *)",
       "Bash(mv *)",
-      "Bash(chmod *)",
-      "Bash(ssh *)",
-      "Bash(ruby *)",
       "Bash(rails *)",
       "Bash(yarn *)",
       "Bash(ls *)",
@@ -66,8 +61,6 @@
       "Skill(*)"
     ],
     "ask": [
-      "Bash(git push *)",
-      "Bash(gh pr create *)",
       "Bash(gh issue create *)",
       "Bash(gh api --method POST *)",
       "Bash(gh api --method PATCH *)",
@@ -75,7 +68,9 @@
     ],
     "defaultMode": "auto"
   },
-  "effortLevel": "xhigh",
+  "model": "opus[1m]",
+  "tui": "fullscreen",
+  "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true
 }

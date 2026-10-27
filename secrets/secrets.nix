@@ -11,7 +11,6 @@ in
   "git-work-include.age".publicKeys = everyone;
   "claude-routing.age".publicKeys = everyone;
   "claude-work-settings.age".publicKeys = everyone;
-  "claude-work-briefing.age".publicKeys = everyone;
   "claude-work-install.age".publicKeys = everyone;
   "codex-sentry-auth-token.age".publicKeys = everyone;
   "me-password.age".publicKeys = everyone;

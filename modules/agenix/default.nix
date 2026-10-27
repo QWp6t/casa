@@ -2,7 +2,6 @@
 let
   home = if pkgs.stdenv.isDarwin then "/Users/me" else "/home/me";
   claudeRoutingPath = "${home}/.local/share/agenix/claude-routing";
-  claudeWorkBriefingPath = "${home}/.local/share/agenix/claude-work-briefing";
   claudeWorkInstallPath = "${home}/.local/share/agenix/claude-work-install";
   claudeWorkSettingsPath = "${home}/.local/share/agenix/claude-work-settings";
   codexSentryAuthTokenPath = "${home}/.local/share/agenix/codex-sentry-auth-token";
@@ -66,13 +65,8 @@ in
       path = claudeWorkSettingsPath;
       symlink = false;
     })
-    (maybeSecret "claude-work-briefing" ../../secrets/claude-work-briefing.age {
-      path = claudeWorkBriefingPath;
-      symlink = false;
-    })
     (maybeSecret "claude-work-install" ../../secrets/claude-work-install.age {
       path = claudeWorkInstallPath;
-      mode = "0500";
       symlink = false;
     })
     (maybeSecret "codex-sentry-auth-token" ../../secrets/codex-sentry-auth-token.age {
