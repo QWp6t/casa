@@ -32,11 +32,6 @@
       "Bash(git show *)",
       "Bash(git blame *)",
       "Bash(git tag)",
-      "Read(*)",
-      "Edit(*)",
-      "Write(*)",
-      "Glob(*)",
-      "Grep(*)",
       "WebFetch(*)",
       "WebSearch",
       "Skill(*)"
