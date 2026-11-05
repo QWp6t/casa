@@ -25,8 +25,14 @@ let
   quienPkg =
     let
       systemPackages = inputs.quien.packages.${pkgs.stdenv.hostPlatform.system};
+      package = if systemPackages ? default then systemPackages.default else systemPackages.quien;
     in
-    if systemPackages ? default then systemPackages.default else systemPackages.quien;
+    package.overrideAttrs (
+      lib.optionalAttrs (inputs.quien.rev == "417632b44244183a77e599e6b6be4430923717d0") {
+        # This revision updated miekg/dns without refreshing the vendor hash.
+        vendorHash = "sha256-PIBHAi92+k9Cr2koPZ/Oyu6vhtgso7mfTcK1W7l9sMM=";
+      }
+    );
   basecamp = inputs.basecamp-cli.packages.${pkgs.stdenv.hostPlatform.system}.basecamp;
 in
 {
