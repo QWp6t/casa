@@ -259,6 +259,12 @@ in
       "${home}/casa/users/me/claude/skills" "${home}/.claude/skills"
   '';
 
+  home.activation.linkCodexSkills = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    PATH="${lib.makeBinPath [ pkgs.coreutils ]}:$PATH"
+    $DRY_RUN_CMD ${pkgs.bash}/bin/bash ${./claude/link-skills.sh} \
+      "${home}/casa/users/me/claude/skills" "${home}/.agents/skills"
+  '';
+
   xdg.configFile = {
     "ripgrep".text = "";
     "zsh/conf.d/01-env.zsh".source = ./zsh/conf.d/01-env.zsh;
