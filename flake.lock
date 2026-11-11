@@ -27,16 +27,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1793968086,
-        "narHash": "sha256-OjsIwWhqXRpzo2neD38HCgLZ4BQUaI80kro9be12NYo=",
+        "lastModified": 1794073398,
+        "narHash": "sha256-6/uzzSZuBsVC7X3P+M8rZrF4woXM28Lkfg443ltDzug=",
         "owner": "basecamp",
         "repo": "basecamp-cli",
-        "rev": "9141e85fff7a1be00e935071a631941651d07abc",
+        "rev": "097174df72f7146da6ecaee6bc659189dacfb922",
         "type": "github"
       },
       "original": {
         "owner": "basecamp",
-        "ref": "v0.24.0",
+        "ref": "v0.24.3",
         "repo": "basecamp-cli",
         "type": "github"
       }
@@ -251,11 +251,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1793726008,
-        "narHash": "sha256-jQp1wKvbwWdLBASTXkSi/VYmDJ5AbBi1WvcMt9HWJC8=",
+        "lastModified": 1793876309,
+        "narHash": "sha256-Wojg9lIH/hDH91iDVH2/EPw8oDSpxjxhXONbU1yf4Zg=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "1d060086d60cb76a40cf37109f979d88a5bd6396",
+        "rev": "f9a75f41be3a74eab55d3a7679d34ad6cc0da977",
         "type": "github"
       },
       "original": {
