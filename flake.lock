@@ -27,16 +27,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1794073398,
-        "narHash": "sha256-6/uzzSZuBsVC7X3P+M8rZrF4woXM28Lkfg443ltDzug=",
+        "lastModified": 1794602030,
+        "narHash": "sha256-g8neApoDbLsaF+uH77ExAaBy5829BL0aPMfsyim+Qh4=",
         "owner": "basecamp",
         "repo": "basecamp-cli",
-        "rev": "097174df72f7146da6ecaee6bc659189dacfb922",
+        "rev": "b41435c80bcddac84def3b03c18101876b7d0bdf",
         "type": "github"
       },
       "original": {
         "owner": "basecamp",
-        "ref": "v0.24.3",
+        "ref": "v0.30.0",
         "repo": "basecamp-cli",
         "type": "github"
       }
